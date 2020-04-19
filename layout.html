@@ -20,33 +20,40 @@
 <p id="add_task"></p>
 
 <script>
+    var input;
+    var output;
+    var title;
+    var socket;
+ 
     function addTask() {
         try {
-            socket.send(title.value + " " + input.value);
+            socket.send(title.innerHTML + " " + input.value);
             input.value = "";
+            delete socket;
         } catch(err) {
             output.innerHTML = err.message;
         }
     }
 
     function createWebsocketAndAddTask() {
-        var input = document.getElementById("input");
-        var output = document.getElementById("output");
-        var title = document.getElementById("title");
-        var socket = new WebSocket("ws://localhost:80/addTask");
+        input = document.getElementById("input");
+        output = document.getElementById("output");
+        title = document.getElementById("title");
+        socket = new WebSocket("ws://localhost:80/addTask");
 
         socket.onopen = function() {
-            output.innerHTML = "Connecting to db\n";
+            output.innerHTML = "Connected to server db\n";
+            addTask();
         };
 
         socket.onmessage = function() {
-            output.innerHTML += "Saved in db\n";
+            output.innerHTML += "Saved in server db\n";
         };
-
+        
         setTimeout(function(){ 
                         output.innerHTML = "";
                     }, 3000);
-        addTask()
+     
     }
     //document.getElementById("add_task").innerHTML = "Add Task";
 </script>

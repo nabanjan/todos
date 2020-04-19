@@ -58,7 +58,7 @@ func initDb() {
 				id INT AUTO_INCREMENT,
 				todo TEXT NOT NULL,
 				title TEXT NOT NULL,
-				done BOOL,
+				done BOOLEAN NOT NULL DEFAULT 0,
 				PRIMARY KEY (id)
 			);`
 		if _, err := db.Exec(query); err != nil {
@@ -90,7 +90,7 @@ func insertInTodoPageData(title string) {
 }
 
 func insertInTodos(title string, todo string) {
-	result, err := db.Exec(`INSERT INTO Todos (todo, title) VALUES (?)`, todo, title)
+	result, err := db.Exec(`INSERT INTO Todos (todo, title) VALUES (?, ?)`, todo, title)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func fillTodos(title string) *TodoPageData {
 }
 
 func addTaskToDb(title string, todo string) {
-	insertInTodoPageData(title)
+	//insertInTodoPageData(title)
 	insertInTodos(title, todo)
 }
 
