@@ -1,4 +1,7 @@
-<h1 id="title">{{.PageTitle}}</h1>
+
+<h1>No Account! No Logins! Just add your todos - specify title in url as http://{site}/todos/{title}!</h1>
+<br>
+<h2 id="title">{{.PageTitle}}</h2>
 <style>
 .done {
     color : green;
@@ -7,10 +10,12 @@
 <ul>
     {{range .Todos}}
         {{if .Done}}
-            <li class="done">{{.Todo}}</li>
+            <h3><li class="done">{{.Todo}}</li></h3>
         {{else}}
-            <li>{{.Todo}}</li>
+            <h3><li>{{.Todo}}</li></h3>
         {{end}}
+        <input type="radio" id="updateDone">
+        <label>Check for done</label><br>
     {{end}}
 </ul>
 <input id="input" type="text" />

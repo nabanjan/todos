@@ -221,7 +221,7 @@ func main() {
 	r := mux.NewRouter()
 	tmpl := template.Must(template.ParseFiles("layout.html"))
 
-	r.HandleFunc("/todos/{title}", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/{title}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"]
 		data := *(fillTodos(title))
@@ -232,7 +232,11 @@ func main() {
 		handleWebSocket(w, r, addTask)
 	})
 
-	r.HandleFunc("/updateTask", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/updateTaskDone", func(w http.ResponseWriter, r *http.Request) {
+
+	})
+
+	r.HandleFunc("/updateTaskNotDone", func(w http.ResponseWriter, r *http.Request) {
 
 	})
 
