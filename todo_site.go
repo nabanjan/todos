@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -100,6 +101,15 @@ func insertInTodos(title string, todo string) {
 	fmt.Println(id)
 }
 
+func updateDoneInTodos(title string, todo string, done bool) {
+	result, err := db.Exec(`UPDATE Todos SET todo = ?, title = ?, done = ?  WHERE title = ?`, todo, title, done, title)
+	if err != nil {
+		log.Fatal(err)
+	}
+	id, err := result.LastInsertId()
+	fmt.Println(id)
+}
+
 func createTitleInDb(title string) {
 	if checkTitleInDb(title) {
 		return
@@ -185,6 +195,18 @@ func addTask(msgStr string) []byte {
 	return b
 }
 
+func updateTaskDone(msgStr string) []byte {
+	var splits []string = strings.Split(msgStr, " ")
+	var title = splits[0]
+	var task = splits[1]
+	var status, _ = strconv.ParseBool(splits[2])
+	//TODO: add to db
+	updateDoneInTodos(title, task, status)
+
+	b := []byte("Marked Done!")
+	return b
+}
+
 func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
 	conn, err := upgrader.Upgrade(w, r, nil) // get the upgrader connection
 	if err != nil {
@@ -218,6 +240,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
 
 func main() {
 	initDb()
+	// Use mux router
 	r := mux.NewRouter()
 	tmpl := template.Must(template.ParseFiles("layout.html"))
 
@@ -233,7 +256,7 @@ func main() {
 	})
 
 	r.HandleFunc("/todo/updateTaskDone", func(w http.ResponseWriter, r *http.Request) {
-
+		handleWebSocket(w, r, updateTaskDone)
 	})
 
 	r.HandleFunc("/todo/updateTaskNotDone", func(w http.ResponseWriter, r *http.Request) {

@@ -15,10 +15,10 @@
                 <h3><li id="{{.Todo}}" class="done">{{.Todo}}</li></h3>
             {{else}}
                 <h3><li id="{{.Todo}}">{{.Todo}}</li></h3>
+                <input type="radio" onchange='createWebsocketAndAddTask("updateTaskDone", document.getElementById("{{.Todo}}"));'>
+                <label>Check for done</label><br>
             {{end}}
-            <input type="radio" onchange='createWebsocketAndAddTask("updateTask", document.getElementById("{{.Todo}}"));'>
         </div>
-        <label>Check for done</label><br>
     {{end}}
 </ul>
 <input id="input" type="text" />
@@ -44,9 +44,9 @@
         }
     }
 
-    function updateTask(elem) {
+    function updateTaskDone(elem) {
         try {
-            socket.send(title.innerHTML + " " + input.value + " " + "Done");
+            socket.send(title.innerHTML + " " + elem.innerHTML + " " + "true");
             input.value = "";
         } catch(err) {
             output.innerHTML = err.message;
