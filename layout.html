@@ -1,6 +1,6 @@
 
 <h1>No Accounts! No Logins! Just add your todos</h1>
-<h1>Specify {title} of the todos list in url as http://{site}/{title}!</h1>
+<h1>Specify {title} of the todos' list in url as http://{site}/{title}!</h1>
 <br>
 <h2 id="title">{{.PageTitle}}</h2>
 <style>
@@ -10,17 +10,19 @@
 </style>
 <ul>
     {{range .Todos}}
-        {{if .Done}}
-            <h3><li class="done">{{.Todo}}</li></h3>
-        {{else}}
-            <h3><li>{{.Todo}}</li></h3>
-        {{end}}
-        <input type="radio" id="updateDone">
+        <div>
+            {{if .Done}}
+                <h3><li id="{{.Todo}}" class="done">{{.Todo}}</li></h3>
+            {{else}}
+                <h3><li id="{{.Todo}}">{{.Todo}}</li></h3>
+            {{end}}
+            <input type="radio" onchange='createWebsocketAndAddTask("updateTask", document.getElementById("{{.Todo}}"));'>
+        </div>
         <label>Check for done</label><br>
     {{end}}
 </ul>
 <input id="input" type="text" />
-<button onclick='createWebsocketAndAddTask("addTask")'>Add Todo</button>
+<button onclick='createWebsocketAndAddTask("addTask", null)'>Add Todo</button>
 <pre id="output"></pre>
 
 <p id="add_task"></p>
@@ -42,7 +44,31 @@
         }
     }
 
-    function createWebsocketAndAddTask(operation) {
+    function updateTask(elem) {
+        try {
+            socket.send(title.innerHTML + " " + input.value + " " + "Done");
+            input.value = "";
+        } catch(err) {
+            output.innerHTML = err.message;
+        } finally {
+            delete socket;
+        }
+    }
+
+    window.getFunctionFromString = function(string) {
+        var scope = window;
+        var scopeSplit = string.split('.');
+        for (i = 0; i < scopeSplit.length - 1; i++)
+        {
+            scope = scope[scopeSplit[i]];
+
+            if (scope == undefined) return;
+        }
+
+        return scope[scopeSplit[scopeSplit.length - 1]];
+    }
+
+    function createWebsocketAndAddTask(operation, elem) {
         input = document.getElementById("input");
         output = document.getElementById("output");
         title = document.getElementById("title");
@@ -50,7 +76,12 @@
 
         socket.onopen = function() {
             output.innerHTML = "Connected to server db\n";
-            addTask();
+            fn = window.getFunctionFromString(operation);
+            if (elem != null) {
+                fn(elem);
+            } else {
+                fn();
+            }
         };
 
         socket.onmessage = function() {
