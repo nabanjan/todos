@@ -228,19 +228,19 @@ func main() {
 		tmpl.Execute(w, data)
 	})
 
-	r.HandleFunc("/addTask", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/todo/addTask", func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, addTask)
 	})
 
-	r.HandleFunc("/updateTaskDone", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/todo/updateTaskDone", func(w http.ResponseWriter, r *http.Request) {
 
 	})
 
-	r.HandleFunc("/updateTaskNotDone", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/todo/updateTaskNotDone", func(w http.ResponseWriter, r *http.Request) {
 
 	})
 
-	r.HandleFunc("/deleteTask", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/todo/deleteTask", func(w http.ResponseWriter, r *http.Request) {
 
 	})
 

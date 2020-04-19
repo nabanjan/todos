@@ -20,7 +20,7 @@
     {{end}}
 </ul>
 <input id="input" type="text" />
-<button onclick='createWebsocketAndAddTask("addTask")'>Add Task</button>
+<button onclick='createWebsocketAndAddTask("addTask")'>Add Todo</button>
 <pre id="output"></pre>
 
 <p id="add_task"></p>
@@ -46,7 +46,7 @@
         input = document.getElementById("input");
         output = document.getElementById("output");
         title = document.getElementById("title");
-        socket = new WebSocket("ws://localhost:80/" + operation);
+        socket = new WebSocket("ws://localhost:80/todo/" + operation);
 
         socket.onopen = function() {
             output.innerHTML = "Connected to server db\n";
