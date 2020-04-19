@@ -14,7 +14,7 @@
     {{end}}
 </ul>
 <input id="input" type="text" />
-<button onclick="createWebsocketAndAddTask()">Add Task</button>
+<button onclick='createWebsocketAndAddTask("addTask")'>Add Task</button>
 <pre id="output"></pre>
 
 <p id="add_task"></p>
@@ -36,11 +36,11 @@
         }
     }
 
-    function createWebsocketAndAddTask() {
+    function createWebsocketAndAddTask(operation) {
         input = document.getElementById("input");
         output = document.getElementById("output");
         title = document.getElementById("title");
-        socket = new WebSocket("ws://localhost:80/addTask");
+        socket = new WebSocket("ws://localhost:80/" + operation);
 
         socket.onopen = function() {
             output.innerHTML = "Connected to server db\n";
