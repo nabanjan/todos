@@ -102,7 +102,7 @@ func insertInTodos(title string, todo string) {
 }
 
 func updateDoneInTodos(title string, todo string, done bool) {
-	result, err := db.Exec(`UPDATE Todos SET todo = ?, title = ?, done = ?  WHERE title = ?`, todo, title, done, title)
+	result, err := db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
 	if err != nil {
 		log.Fatal(err)
 	}
