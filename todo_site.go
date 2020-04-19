@@ -25,6 +25,8 @@ type TodoPageData struct {
 	Todos     []Todo
 }
 
+type fn func(string) []byte
+
 var db *sql.DB
 var err error
 
@@ -172,50 +174,71 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+func addTask(msgStr string) []byte {
+	var splits []string = strings.Split(msgStr, " ")
+	var title = splits[0]
+	var task = splits[1]
+	//TODO: add to db
+	addTaskToDb(title, task)
+
+	b := []byte("Added!")
+	return b
+}
+
+func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
+	conn, err := upgrader.Upgrade(w, r, nil) // get the upgrader connection
+	if err != nil {
+		fmt.Println("Warning: Could get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path)
+		return
+	}
+
+	for {
+		// Read message from browser
+		msgType, msg, err := conn.ReadMessage()
+		if err != nil {
+			errInBytes := []byte("Failed reading message due to :" + err.Error())
+			if err = conn.WriteMessage(msgType, errInBytes); err != nil { // This is very unlikely
+				return
+			}
+			return
+		}
+
+		// Print the message to the console
+		var msgStr = string(msg)
+		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), msgStr)
+
+		b := oper(string(msgStr))
+
+		// Write message back to browser
+		if err = conn.WriteMessage(msgType, b); err != nil {
+			return
+		}
+	}
+}
+
 func main() {
 	initDb()
 	r := mux.NewRouter()
 	tmpl := template.Must(template.ParseFiles("layout.html"))
+
 	r.HandleFunc("/todos/{title}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"]
 		data := *(fillTodos(title))
 		tmpl.Execute(w, data)
 	})
+
 	r.HandleFunc("/addTask", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil) // get the upgrader connection
-		if err != nil {
-			fmt.Println("Warning: Could get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path)
-			return
-		}
-
-		for {
-			// Read message from browser
-			msgType, msg, err := conn.ReadMessage()
-			if err != nil {
-				errInBytes := []byte("Failed reading message due to :" + err.Error())
-				if err = conn.WriteMessage(msgType, errInBytes); err != nil { // This is very unlikely
-					return
-				}
-				return
-			}
-
-			// Print the message to the console
-			var msgStr = string(msg)
-			fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), msgStr)
-
-			var splits []string = strings.Split(msgStr, " ")
-			var title = splits[0]
-			var task = splits[1]
-			//TODO: add to db
-			addTaskToDb(title, task)
-
-			b := []byte("Added!")
-			// Write message back to browser
-			if err = conn.WriteMessage(msgType, b); err != nil {
-				return
-			}
-		}
+		handleWebSocket(w, r, addTask)
 	})
+
+	r.HandleFunc("/updateTask", func(w http.ResponseWriter, r *http.Request) {
+
+	})
+
+	r.HandleFunc("/deleteTask", func(w http.ResponseWriter, r *http.Request) {
+
+	})
+
 	http.ListenAndServe(":80", r)
 }
