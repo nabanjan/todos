@@ -7,9 +7,9 @@
 <ul>
     {{range .Todos}}
         {{if .Done}}
-            <li class="done">{{.Title}}</li>
+            <li class="done">{{.Todo}}</li>
         {{else}}
-            <li>{{.Title}}</li>
+            <li>{{.Todo}}</li>
         {{end}}
     {{end}}
 </ul>
@@ -29,9 +29,10 @@
         try {
             socket.send(title.innerHTML + " " + input.value);
             input.value = "";
-            delete socket;
         } catch(err) {
             output.innerHTML = err.message;
+        } finally {
+            delete socket;
         }
     }
 
@@ -52,6 +53,7 @@
         
         setTimeout(function(){ 
                         output.innerHTML = "";
+                        location.reload();
                     }, 3000);
      
     }

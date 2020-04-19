@@ -15,8 +15,8 @@ import (
 
 // Todo ...
 type Todo struct {
-	Title string
-	Done  bool
+	Todo string
+	Done bool
 }
 
 // TodoPageData ...
@@ -127,7 +127,7 @@ func getTodos(title string) *([]Todo) {
 	if isTodosEmpty() {
 		return &todos
 	}
-	rows, err := db.Query(`SELECT id, title FROM Todos WHERE title='` + title + "'")
+	rows, err := db.Query(`SELECT todo, done FROM Todos WHERE title='` + title + "'")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func getTodos(title string) *([]Todo) {
 	for rows.Next() {
 		var t Todo
 
-		err := rows.Scan(&t.Title, &t.Done)
+		err := rows.Scan(&t.Todo, &t.Done)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -164,7 +164,6 @@ func fillTodos(title string) *TodoPageData {
 }
 
 func addTaskToDb(title string, todo string) {
-	//insertInTodoPageData(title)
 	insertInTodos(title, todo)
 }
 
