@@ -80,16 +80,29 @@ func checkTitleInDb(titleStr string) bool {
 	return true
 }
 
-func createTitleInDb(title string) {
-	if checkTitleInDb(title) {
-		return
-	}
+func insertInTodoPageData(title string) {
 	result, err := db.Exec(`INSERT INTO TodoPageData (title) VALUES (?)`, title)
 	if err != nil {
 		log.Fatal(err)
 	}
 	id, err := result.LastInsertId()
 	fmt.Println(id)
+}
+
+func insertInTodos(title string, todo string) {
+	result, err := db.Exec(`INSERT INTO Todos (todo, title) VALUES (?)`, todo, title)
+	if err != nil {
+		log.Fatal(err)
+	}
+	id, err := result.LastInsertId()
+	fmt.Println(id)
+}
+
+func createTitleInDb(title string) {
+	if checkTitleInDb(title) {
+		return
+	}
+	insertInTodoPageData(title)
 }
 
 func isTodosEmpty() bool {
@@ -150,6 +163,11 @@ func fillTodos(title string) *TodoPageData {
 	return &data
 }
 
+func addTaskToDb(title string, todo string) {
+	insertInTodoPageData(title)
+	insertInTodos(title, todo)
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -169,6 +187,7 @@ func main() {
 		conn, err := upgrader.Upgrade(w, r, nil) // get the upgrader connection
 		if err != nil {
 			fmt.Println("Warning: Could get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path)
+			return
 		}
 
 		for {
@@ -190,6 +209,7 @@ func main() {
 			var title = splits[0]
 			var task = splits[1]
 			//TODO: add to db
+			addTaskToDb(title, task)
 
 			b := []byte("Added!")
 			// Write message back to browser
