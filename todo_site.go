@@ -275,6 +275,11 @@ func main() {
 	r := mux.NewRouter()
 	tmpl := template.Must(template.ParseFiles("layout.html"))
 
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		data := *(fillTodos("home"))
+		tmpl.Execute(w, data)
+	})
+
 	r.HandleFunc("/{title}", func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		title := vars["title"]
