@@ -83,44 +83,51 @@ func checkTitleInDb(titleStr string) bool {
 	return true
 }
 
-func insertInTodoPageData(title string) {
+func insertInTodoPageData(title string) bool {
 	result, err := db.Exec(`INSERT INTO TodoPageData (title) VALUES (?)`, title)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return false
 	}
 	id, err := result.LastInsertId()
 	fmt.Println(id)
+
+	return true
 }
 
-func insertInTodos(title string, todo string) {
+func insertInTodos(title string, todo string) bool {
 	result, err := db.Exec(`INSERT INTO Todos (todo, title) VALUES (?, ?)`, todo, title)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return false
 	}
 	id, err := result.LastInsertId()
 	fmt.Println(id)
+
+	return true
 }
 
-func updateDoneInTodos(title string, todo string, done bool) {
-	result, err := db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
+func updateDoneInTodos(title string, todo string, done bool) bool {
+	_, err := db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return false
 	}
-	id, err := result.LastInsertId()
-	fmt.Println(id)
+	return true
 }
 
-func createTitleInDb(title string) {
+func createTitleInDb(title string) bool {
 	if checkTitleInDb(title) {
-		return
+		return true
 	}
-	insertInTodoPageData(title)
+	return insertInTodoPageData(title)
 }
 
 func isTodosEmpty() bool {
 	rows, err := db.Query(`SELECT 1 FROM Todos LIMIT 1`)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		return false
 	}
 	defer rows.Close()
 	i := 0
@@ -175,13 +182,8 @@ func fillTodos(title string) *TodoPageData {
 	return &data
 }
 
-func addTaskToDb(title string, todo string) {
-	insertInTodos(title, todo)
-}
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+func addTaskToDb(title string, todo string) bool {
+	return insertInTodos(title, todo)
 }
 
 func addTask(msgStr string) []byte {
@@ -189,9 +191,10 @@ func addTask(msgStr string) []byte {
 	var title = splits[0]
 	var task = splits[1]
 	//TODO: add to db
-	addTaskToDb(title, task)
-
 	b := []byte("Added!")
+	if !addTaskToDb(title, task) {
+		b = []byte("Failed to add due to unknown error!")
+	}
 	return b
 }
 
@@ -200,17 +203,35 @@ func updateTaskDone(msgStr string) []byte {
 	var title = splits[0]
 	var task = splits[1]
 	var status, _ = strconv.ParseBool(splits[2])
-	//TODO: add to db
-	updateDoneInTodos(title, task, status)
-
+	//add to db
 	b := []byte("Marked Done!")
+	if !updateDoneInTodos(title, task, status) {
+		b = []byte("Couldn't mark as done due to unknown error!")
+	}
 	return b
 }
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+func writeBackMsgToClient(conn *websocket.Conn, oper fn, msgType int, msgStr string) {
+	b := oper(string(msgStr))
+	// Write message back to browser
+	if err = conn.WriteMessage(msgType, b); err != nil {
+		return
+	}
+}
+
 func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
+	msgType := 1
 	conn, err := upgrader.Upgrade(w, r, nil) // get the upgrader connection
 	if err != nil {
-		fmt.Println("Warning: Could get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path)
+		var msgStr string
+		msgStr = "Warning: Could get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path
+		fmt.Println(msgStr)
+		writeBackMsgToClient(conn, oper, msgType, msgStr)
 		return
 	}
 
@@ -218,23 +239,17 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
 		// Read message from browser
 		msgType, msg, err := conn.ReadMessage()
 		if err != nil {
-			errInBytes := []byte("Failed reading message due to :" + err.Error())
-			if err = conn.WriteMessage(msgType, errInBytes); err != nil { // This is very unlikely
-				return
-			}
+			errMsg := "Failed reading message due to :" + err.Error()
+			writeBackMsgToClient(conn, oper, msgType, errMsg)
 			return
 		}
 
 		// Print the message to the console
-		var msgStr = string(msg)
+		msgStr := string(msg)
 		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), msgStr)
 
-		b := oper(string(msgStr))
+		writeBackMsgToClient(conn, oper, msgType, msgStr)
 
-		// Write message back to browser
-		if err = conn.WriteMessage(msgType, b); err != nil {
-			return
-		}
 	}
 }
 
