@@ -186,13 +186,29 @@ func addTaskToDb(title string, todo string) bool {
 	return insertInTodos(title, todo)
 }
 
+func isDuplicateTask(titleStr string, task string) bool {
+	var (
+		id    int
+		title string
+		todo  string
+	)
+	query := "SELECT id, title, todo FROM TodoPageData WHERE title = ? AND todo = ?"
+	if err := db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo); err != nil {
+		return false
+	}
+	fmt.Println(id, title, todo)
+	return true
+}
+
 func addTask(msgStr string) []byte {
 	var splits []string = strings.Split(msgStr, " ")
 	var title = splits[0]
 	var task = splits[1]
 	//TODO: add to db
 	b := []byte("Added!")
-	if !addTaskToDb(title, task) {
+	if isDuplicateTask(title, task) {
+		b = []byte("Duplicate todo found. Failed to add!")
+	} else if !addTaskToDb(title, task) {
 		b = []byte("Failed to add due to unknown error!")
 	}
 	return b
