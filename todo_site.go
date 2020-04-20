@@ -298,5 +298,6 @@ func main() {
 
 	})
 
+	fmt.Println("Starting server...")
 	http.ListenAndServe(":80", r)
 }
