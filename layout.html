@@ -84,8 +84,8 @@
             }
         };
 
-        socket.onmessage = function() {
-            output.innerHTML += "Saved in server db\n";
+        socket.onmessage = function(e) {
+            output.innerHTML += "Server: " + e.data + "\n";
         };
         
         setTimeout(function(){ 

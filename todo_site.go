@@ -192,7 +192,7 @@ func isDuplicateTask(titleStr string, task string) bool {
 		title string
 		todo  string
 	)
-	query := "SELECT id, title, todo FROM TodoPageData WHERE title = ? AND todo = ?"
+	query := "SELECT id, title, todo FROM Todos WHERE title = ? AND todo = ?"
 	if err := db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo); err != nil {
 		return false
 	}
