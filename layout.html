@@ -72,7 +72,7 @@
         input = document.getElementById("input");
         output = document.getElementById("output");
         title = document.getElementById("title");
-        socket = new WebSocket("ws://138.68.10.55:80/todo/" + operation);
+        socket = new WebSocket("ws://localhost:80/todo/" + operation);
 
         socket.onopen = function() {
             output.innerHTML = "Connected to server db\n";

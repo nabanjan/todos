@@ -142,7 +142,7 @@ func isTodosEmpty() bool {
 }
 
 func getTodos(title string) *([]Todo) {
-	var todos []Todo = make([]Todo, 5, 10)
+	var todos []Todo
 	if isTodosEmpty() {
 		return &todos
 	}
