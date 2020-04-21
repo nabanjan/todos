@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -25,6 +24,14 @@ type TodoPageData struct {
 	PageTitle string
 	Todos     []Todo
 }
+
+type todoState string
+
+const (
+	todoDone    todoState = "Done"
+	todoNotDone           = "NotDone"
+	todoDelete            = "Delete"
+)
 
 type fn func(string) []byte
 
@@ -107,11 +114,28 @@ func insertInTodos(title string, todo string) bool {
 	return true
 }
 
-func updateDoneInTodos(title string, todo string, done bool) bool {
-	_, err := db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
-	if err != nil {
-		fmt.Println(err.Error())
-		return false
+func updateDoneInTodos(title string, todo string, state todoState) bool {
+	var done bool
+	if state == todoDone || state == todoNotDone {
+		if state == todoDone {
+			done = true
+		}
+		if state == todoNotDone {
+			done = false
+		}
+		_, err := db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
+		if err != nil {
+			fmt.Println(err.Error())
+			return false
+		}
+		return true
+	}
+	if state == todoDelete {
+		_, err := db.Exec(`DELETE FROM Todos WHERE title = ? AND todo = ?`, title, todo)
+		if err != nil {
+			fmt.Println(err.Error())
+			return false
+		}
 	}
 	return true
 }
@@ -218,13 +242,25 @@ func updateTaskDone(msgStr string) []byte {
 	var splits []string = strings.Split(msgStr, " ")
 	var title = splits[0]
 	var task = splits[1]
-	var status, _ = strconv.ParseBool(splits[2])
-	//add to db
-	b := []byte("Marked Done!")
-	if !updateDoneInTodos(title, task, status) {
-		b = []byte("Couldn't mark as done due to unknown error!")
+	var state = getTodoState(splits[2])
+	//delete from db
+	b := []byte("Marked " + splits[2])
+	if !updateDoneInTodos(title, task, state) {
+		b = []byte("Couldn't mark as " + splits[2] + " due to unknown error!")
 	}
 	return b
+}
+
+func getTodoState(state string) todoState {
+	switch state {
+	case "done":
+		return todoDone
+	case "notDone":
+		return todoNotDone
+	case "delete":
+		return todoDelete
+	}
+	return todoDone
 }
 
 var upgrader = websocket.Upgrader{
@@ -299,8 +335,8 @@ func main() {
 
 	})
 
-	r.HandleFunc("/todo/deleteTask", func(w http.ResponseWriter, r *http.Request) {
-
+	r.HandleFunc("/todo/deleteTaskDone", func(w http.ResponseWriter, r *http.Request) {
+		handleWebSocket(w, r, updateTaskDone)
 	})
 
 	fmt.Println("Starting server...")

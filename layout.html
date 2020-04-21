@@ -13,6 +13,7 @@
         <div>
             {{if .Done}}
                 <h3><li id="{{.Todo}}" class="done">{{.Todo}}</li></h3>
+                <input type="radio" onchange='createWebsocketAndAddTask("deleteTaskDone", document.getElementById("{{.Todo}}"));'>
             {{else}}
                 <h3><li id="{{.Todo}}">{{.Todo}}</li></h3>
                 <input type="radio" onchange='createWebsocketAndAddTask("updateTaskDone", document.getElementById("{{.Todo}}"));'>
@@ -46,7 +47,18 @@
 
     function updateTaskDone(elem) {
         try {
-            socket.send(title.innerHTML + " " + elem.innerHTML + " " + "true");
+            socket.send(title.innerHTML + " " + elem.innerHTML + " " + "done");
+            input.value = "";
+        } catch(err) {
+            output.innerHTML = err.message;
+        } finally {
+            delete socket;
+        }
+    }
+
+    function deleteTaskDone(elem) {
+        try {
+            socket.send(title.innerHTML + " " + elem.innerHTML + " " + "delete");
             input.value = "";
         } catch(err) {
             output.innerHTML = err.message;
