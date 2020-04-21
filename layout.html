@@ -14,6 +14,7 @@
             {{if .Done}}
                 <h3><li id="{{.Todo}}" class="done">{{.Todo}}</li></h3>
                 <input type="radio" onchange='createWebsocketAndAddTask("deleteTaskDone", document.getElementById("{{.Todo}}"));'>
+                <label>Check to delete</label><br>
             {{else}}
                 <h3><li id="{{.Todo}}">{{.Todo}}</li></h3>
                 <input type="radio" onchange='createWebsocketAndAddTask("updateTaskDone", document.getElementById("{{.Todo}}"));'>
