@@ -279,9 +279,11 @@ func writeBackMsgToClient(conn *websocket.Conn, oper fn, msgType int, msgStr str
 func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
 	msgType := 1
 	conn, err := upgrader.Upgrade(w, r, nil) // get the upgrader connection
+	defer conn.Close()
+
 	if err != nil {
 		var msgStr string
-		msgStr = "Warning: Could get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path
+		msgStr = "Warning: Couldn't get the websocket connection! Cannot handle websocket traffic for " + r.URL.Path
 		fmt.Println(msgStr)
 		writeBackMsgToClient(conn, oper, msgType, msgStr)
 		return
