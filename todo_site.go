@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
@@ -35,55 +34,13 @@ const (
 
 type fn func(string) []byte
 
-var db *sql.DB
-var err error
-
-func initDb() {
-	db, err = sql.Open("mysql", "root:passwd1234@(127.0.0.1:3306)/db?parseTime=true")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-
-	query := `SELECT 1 FROM TodoPageData LIMIT 1;`
-	if _, err := db.Exec(query); err != nil {
-		// Create a new table
-		query = `
-			CREATE TABLE TodoPageData (
-				id INT AUTO_INCREMENT,
-				title TEXT NOT NULL,
-				PRIMARY KEY (id)
-			);`
-		if _, err := db.Exec(query); err != nil {
-			log.Fatal(err)
-		}
-	}
-	query = `SELECT 1 FROM Todos LIMIT 1;`
-	if _, err := db.Exec(query); err != nil {
-		// Create a new table
-		query = `
-			CREATE TABLE Todos (
-				id INT AUTO_INCREMENT,
-				todo TEXT NOT NULL,
-				title TEXT NOT NULL,
-				done BOOLEAN NOT NULL DEFAULT 0,
-				PRIMARY KEY (id)
-			);`
-		if _, err := db.Exec(query); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
 func checkTitleInDb(titleStr string) bool {
 	var (
 		id    int
 		title string
 	)
 	query := "SELECT id, title FROM TodoPageData WHERE title = ?"
-	if err := db.QueryRow(query, titleStr).Scan(&id, &title); err != nil {
+	if err := Db.QueryRow(query, titleStr).Scan(&id, &title); err != nil {
 		return false
 	}
 	fmt.Println(id, title)
@@ -91,7 +48,7 @@ func checkTitleInDb(titleStr string) bool {
 }
 
 func insertInTodoPageData(title string) bool {
-	result, err := db.Exec(`INSERT INTO TodoPageData (title) VALUES (?)`, title)
+	result, err := Db.Exec(`INSERT INTO TodoPageData (title) VALUES (?)`, title)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
@@ -103,7 +60,7 @@ func insertInTodoPageData(title string) bool {
 }
 
 func insertInTodos(title string, todo string) bool {
-	result, err := db.Exec(`INSERT INTO Todos (todo, title) VALUES (?, ?)`, todo, title)
+	result, err := Db.Exec(`INSERT INTO Todos (todo, title) VALUES (?, ?)`, todo, title)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
@@ -123,7 +80,7 @@ func updateDoneInTodos(title string, todo string, state todoState) bool {
 		if state == todoNotDone {
 			done = false
 		}
-		_, err := db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
+		_, err := Db.Exec(`UPDATE Todos SET done = ?  WHERE title = ? AND todo = ?`, done, title, todo)
 		if err != nil {
 			fmt.Println(err.Error())
 			return false
@@ -131,7 +88,7 @@ func updateDoneInTodos(title string, todo string, state todoState) bool {
 		return true
 	}
 	if state == todoDelete {
-		_, err := db.Exec(`DELETE FROM Todos WHERE title = ? AND todo = ?`, title, todo)
+		_, err := Db.Exec(`DELETE FROM Todos WHERE title = ? AND todo = ?`, title, todo)
 		if err != nil {
 			fmt.Println(err.Error())
 			return false
@@ -148,7 +105,7 @@ func createTitleInDb(title string) bool {
 }
 
 func isTodosEmpty() bool {
-	rows, err := db.Query(`SELECT 1 FROM Todos LIMIT 1`)
+	rows, err := Db.Query(`SELECT 1 FROM Todos LIMIT 1`)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
@@ -170,7 +127,7 @@ func getTodos(title string) *([]Todo) {
 	if isTodosEmpty() {
 		return &todos
 	}
-	rows, err := db.Query(`SELECT todo, done FROM Todos WHERE title='` + title + "'")
+	rows, err := Db.Query(`SELECT todo, done FROM Todos WHERE title='` + title + "'")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,7 +174,7 @@ func isDuplicateTask(titleStr string, task string) bool {
 		todo  string
 	)
 	query := "SELECT id, title, todo FROM Todos WHERE title = ? AND todo = ?"
-	if err := db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo); err != nil {
+	if err := Db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo); err != nil {
 		return false
 	}
 	fmt.Println(id, title, todo)
@@ -228,7 +185,7 @@ func addTask(msgStr string) []byte {
 	var splits []string = strings.Split(msgStr, " ")
 	var title = splits[0]
 	var task = splits[1]
-	//TODO: add to db
+	//TODO: add to Db
 	b := []byte("Added!")
 	if isDuplicateTask(title, task) {
 		b = []byte("Duplicate todo found. Failed to add!")
@@ -243,7 +200,7 @@ func updateTaskDone(msgStr string) []byte {
 	var title = splits[0]
 	var task = splits[1]
 	var state = getTodoState(splits[2])
-	//delete from db
+	//delete from Db
 	b := []byte("Marked " + splits[2])
 	if !updateDoneInTodos(title, task, state) {
 		b = []byte("Couldn't mark as " + splits[2] + " due to unknown error!")
@@ -303,12 +260,12 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, oper fn) {
 		fmt.Printf("%s sent: %s\n", conn.RemoteAddr(), msgStr)
 
 		writeBackMsgToClient(conn, oper, msgType, msgStr)
-
 	}
 }
 
 func main() {
 	initDb()
+	//initRMQ()
 	// Use mux router
 	r := mux.NewRouter()
 	tmpl := template.Must(template.ParseFiles("layout.html"))
