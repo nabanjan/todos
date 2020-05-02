@@ -176,7 +176,7 @@ func isDuplicateTask(titleStr string, task string) bool {
 	)
 	query := "SELECT id, title, todo FROM Todos WHERE title = ? AND todo = ?"
 	err := Db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo)
-	if err != sql.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return false
 	}
 	fmt.Println(id, title, todo)
