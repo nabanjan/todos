@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
@@ -174,7 +175,8 @@ func isDuplicateTask(titleStr string, task string) bool {
 		todo  string
 	)
 	query := "SELECT id, title, todo FROM Todos WHERE title = ? AND todo = ?"
-	if err := Db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo); err != nil {
+	err := Db.QueryRow(query, titleStr, task).Scan(&id, &title, &todo)
+	if err != sql.ErrNoRows {
 		return false
 	}
 	fmt.Println(id, title, todo)
@@ -279,7 +281,8 @@ func main() {
 		vars := mux.Vars(r)
 		title := vars["title"]
 		data := *(fillTodos(title))
-		tmpl.Execute(w, data)
+		err = tmpl.Execute(w, data)
+		handleError(err, "Couldn't read the layout.html")
 	})
 
 	r.HandleFunc("/todo/addTask", func(w http.ResponseWriter, r *http.Request) {
