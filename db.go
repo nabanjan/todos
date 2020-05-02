@@ -10,7 +10,7 @@ var Db *sql.DB
 var err error
 
 func initDb() {
-	Db, err = sql.Open("mysql", "root:passwd1234@(127.0.0.1:3306)/Db?parseTime=true")
+	Db, err = sql.Open("mysql", "root:passwd1234@(127.0.0.1:3306)/db?parseTime=true")
 	handleError(err, "")
 
 	err := Db.Ping()
