@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -301,6 +303,16 @@ func main() {
 
 	r.HandleFunc("/todo/deleteTaskDone", func(w http.ResponseWriter, r *http.Request) {
 		handleWebSocket(w, r, updateTaskDone)
+	})
+
+	r.HandleFunc("/kafka/produceConsume", func(w http.ResponseWriter, r *http.Request) {
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go kafkaProducer(&wg)
+		time.Sleep(5 * time.Second)
+		wg.Add(1)
+		go kafkaConsumer(&wg)
+		wg.Wait()
 	})
 
 	fmt.Println("Starting server...")
