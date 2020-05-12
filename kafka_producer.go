@@ -10,7 +10,7 @@ import (
 func kafkaProducer(wg *sync.WaitGroup) {
 	defer wg.Done()
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers":     "localhost",
+		"bootstrap.servers":     "localhost:9092",
 		"broker.address.family": "v4",
 	})
 	if err != nil {
